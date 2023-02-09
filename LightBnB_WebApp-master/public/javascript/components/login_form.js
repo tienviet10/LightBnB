@@ -17,7 +17,6 @@ $(() => {
       </div>
     </form>
   `);
-
   window.$logInForm = $logInForm;
 
   $logInForm.on('submit', function(event) {
