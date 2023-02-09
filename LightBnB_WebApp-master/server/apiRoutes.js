@@ -29,20 +29,12 @@ module.exports = function(router, database) {
       return;
     }
 
-    console.log({id: userId, ...req.body});
     database.makeAReservation({id: userId, ...req.body })
       .then(reservation => res.send(reservation))
       .catch(e => {
         console.error(e);
         res.send(e);
       });
-    
-    // database.getAllReservations(userId)
-    //   .then(reservations => res.send({ reservations }))
-    //   .catch(e => {
-    //     console.error(e);
-    //     res.send(e);
-    //   });
   });
 
   router.post('/properties', (req, res) => {
