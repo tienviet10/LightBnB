@@ -92,4 +92,5 @@ $(() => {
     views_manager.show('newProperty');
   });
 
+  
 });

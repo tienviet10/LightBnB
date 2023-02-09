@@ -189,10 +189,9 @@ const getAllProperties = function(options, limit = 10) {
   // Order and add limit clause
   queryParams.push(limit);
   queryString += `
-  ORDER BY cost_per_night
   LIMIT $${queryParams.length};
   `;
-  
+  console.log(queryString);
   return pool
     .query(
       queryString,
@@ -232,3 +231,29 @@ const addProperty = function(property) {
     });
 };
 exports.addProperty = addProperty;
+
+/**
+ * Add a property to the database
+ * @param {{}} property An object containing all of the property details.
+ * @return {Promise<{}>} A promise to the property.
+ */
+const makeAReservation = function(data) {
+  const queryString = `
+  INSERT INTO
+    reservations (start_date, end_date, property_id, guest_id)
+  VALUES
+    ($1, $2, $3, $4)
+  RETURNING *;
+  `;
+  return pool
+    .query(
+      queryString,
+      [data.start_date, data.end_date, data.property_id, data.id])
+    .then((result) => {
+      return result.rows[0];
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
+};
+exports.makeAReservation = makeAReservation;
