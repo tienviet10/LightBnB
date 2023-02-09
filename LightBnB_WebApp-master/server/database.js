@@ -124,13 +124,79 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-  const queryString = `
-  SELECT * FROM properties LIMIT $1;
+  // 1
+  const queryParams = [];
+
+  // Function to check if WHERE OR AND should be added
+  const addWhereORAnd = () => {
+    if (queryString.includes('WHERE')) {
+      queryString += 'AND ';
+    } else {
+      queryString += 'WHERE ';
+    }
+  };
+
+  let queryString = `
+  SELECT properties.*
   `;
+  
+  // Only add when 'minimum_rating' is available
+  if (options.minimum_rating) {
+    queryString += ', avg(property_reviews.rating) as average_rating ';
+  }
+
+  queryString += `FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  `;
+
+  // 2
+  // Add options for querying
+  if (options.city) {
+    addWhereORAnd();
+    queryParams.push(`%${options.city}%`);
+    queryString += `city LIKE $${queryParams.length} `;
+  }
+
+  if (options.owner_id) {
+    addWhereORAnd();
+    queryParams.push(`${options.owner_id}`);
+    queryString += `owner_id = $${queryParams.length} `;
+  }
+
+  if (options.minimum_price_per_night) {
+    addWhereORAnd();
+    queryParams.push(options.minimum_price_per_night * 100);
+    queryString += `cost_per_night >= $${queryParams.length} `;
+  }
+
+  if (options.maximum_price_per_night) {
+    addWhereORAnd();
+    queryParams.push(options.maximum_price_per_night * 100);
+    queryString += `cost_per_night <= $${queryParams.length} `;
+  }
+
+  if (options.minimum_rating) {
+    queryParams.push(`${options.minimum_rating}`);
+    queryString += `
+    GROUP BY
+      properties.id
+    HAVING
+      avg(property_reviews.rating) >= $${queryParams.length}
+    `;
+  }
+
+  // 3
+  // Order and add limit clause
+  queryParams.push(limit);
+  queryString += `
+  ORDER BY cost_per_night
+  LIMIT $${queryParams.length};
+  `;
+
   return pool
     .query(
       queryString,
-      [limit])
+      queryParams)
     .then((result) => {
       return result.rows;
     })
